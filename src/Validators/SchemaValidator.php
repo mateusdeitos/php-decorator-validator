@@ -13,7 +13,7 @@ abstract class SchemaValidator {
 	private $schemas = [];
 
 	public function validate() {
-		$this->generateSchema();
+		$this->generateSchemas();
 		$result = [];
 		foreach ($this->schemas as $schema) {
 			$result[] = $schema->assert();
@@ -21,10 +21,7 @@ abstract class SchemaValidator {
 		return $result;
 	}
 
-	/**
-	 * @return ValidationHandler[]
-	 */
-	protected function generateSchema() {
+	protected function generateSchemas() {
 		$assertions = $this->getClassAssertions();
 		foreach ($assertions as $assertion) {
 			$this->schemas[] = new ValidationHandler($assertion);
