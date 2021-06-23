@@ -1,0 +1,14 @@
+{
+	"name": "md/tiny-validacoes",
+	"authors": [
+		{
+			"name": "mateusdeitos",
+			"email": "mate.deitos@hotmail.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Validations\\": "src/"
+		}
+	}
+}
