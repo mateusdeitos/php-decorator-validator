@@ -22,21 +22,15 @@ class ValidationHandler {
 		$params = $this->getAssertionParams();
 		try {
 			call_user_func_array([$instance, $this->assertion->method], $params);
-			return [
-				"field" => $this->assertion->field,
-				"fieldValue" => $this->assertion->fieldValue,
-				"params" => $this->assertion->params,
+			return array_merge($this->assertion->getProperties(), [
 				"result" => "OK",
-			];
+			]);
 
 		} catch (ValidationException $e) {
-			return [
-				"field" => $this->assertion->field,
-				"fieldValue" => $this->assertion->fieldValue,
-				"params" => $this->assertion->params,
+			return array_merge($this->assertion->getProperties(), [
 				"result" => "ERROR",
 				"message" => $e->getMessage()
-			];
+			]);
 		}
 
 	}

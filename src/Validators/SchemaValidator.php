@@ -12,13 +12,56 @@ abstract class SchemaValidator {
 	 */
 	private $schemas = [];
 
-	private function parseValidationParameters($validation) {
-		$matches = [];
-		preg_match("/\(([^\)]+)\)/", $validation, $matches);
-		if (!empty($matches)) {
-			return explode(',', $matches[1]);
+	public function validate() {
+		$this->generateSchema();
+		$result = [];
+		foreach ($this->schemas as $schema) {
+			$result[] = $schema->assert();
 		}
-		return [];
+		return $result;
+	}
+
+	/**
+	 * @return ValidationHandler[]
+	 */
+	protected function generateSchema() {
+		$assertions = $this->getClassAssertions();
+		foreach ($assertions as $assertion) {
+			$this->schemas[] = new ValidationHandler($assertion);
+		}
+	}
+
+	/**
+	 * @return Assertion[]
+	 */
+	private function getClassAssertions() {
+		$props = (new ReflectionClass($this))->getProperties();
+		$validations = [];
+		foreach ($props as $prop) {
+			foreach ($this->getPropValidations($prop) as $validation) {
+				if (empty(trim($validation))) {
+					continue;
+				}
+
+				$validations[] = $this->parseValidation($prop, trim($validation));
+			}
+		}
+
+		return $validations;
+
+	}
+
+	private function getPropValidations(ReflectionProperty $prop): array {
+		$comments = (new ReflectionProperty($this, $prop->getName()))->getDocComment();
+		$comments = trim(str_replace(["\n", "*", "/"], "", $comments));
+		return explode("@validate", $comments);
+	}
+
+	private function parseValidation(ReflectionProperty $prop, $validation): Assertion {
+		$assertionClass = $this->parseClass($validation);
+		$assertionMethod = $this->parseMethod($validation);
+		$parsedParams = $this->parseValidationParameters($validation);
+		return new Assertion($prop->getName(), $this->{$prop->getName()}, $assertionClass, $assertionMethod, $parsedParams);
 	}
 
 	private function parseClass($validation) {
@@ -44,55 +87,13 @@ abstract class SchemaValidator {
 		return $method;
 	}
 
-	private function parseValidation(ReflectionProperty $prop, $validation): Assertion {
-		$assertionClass = $this->parseClass($validation);
-		$assertionMethod = $this->parseMethod($validation);
-		$parsedParams = $this->parseValidationParameters($validation);
-		return new Assertion($prop->getName(), $this->{$prop->getName()}, $assertionClass, $assertionMethod, $parsedParams);
-	}
-
-	private function getPropValidations(ReflectionProperty $prop): array {
-		$comments = (new ReflectionProperty($this, $prop->getName()))->getDocComment();
-		$comments = trim(str_replace(["\n", "*", "/"], "", $comments));
-		return explode("@validate", $comments);
-	}
-
-	/**
-	 * @return Assertion[]
-	 */
-	private function getClassAssertions() {
-		$props = (new ReflectionClass($this))->getProperties();
-		$validations = [];
-		foreach ($props as $prop) {
-			foreach ($this->getPropValidations($prop) as $validation) {
-				if (empty(trim($validation))) {
-					continue;
-				}
-
-				$validations[] = $this->parseValidation($prop, trim($validation));
-			}
+	private function parseValidationParameters($validation) {
+		$matches = [];
+		preg_match("/\(([^\)]+)\)/", $validation, $matches);
+		if (!empty($matches)) {
+			return explode(',', $matches[1]);
 		}
-
-		return $validations;
-
+		return [];
 	}
 
-	/**
-	 * @return ValidationHandler[]
-	 */
-	protected function generateSchema() {
-		$assertions = $this->getClassAssertions();
-		foreach ($assertions as $assertion) {
-			$this->schemas[] = new ValidationHandler($assertion);
-		}
-	}
-
-	public function validate() {
-		$this->generateSchema();
-		$result = [];
-		foreach ($this->schemas as $schema) {
-			$result[] = $schema->assert();
-		}
-		return $result;
-	}
 }
