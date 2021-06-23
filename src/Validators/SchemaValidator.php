@@ -33,18 +33,18 @@ abstract class SchemaValidator {
 	 */
 	private function getClassAssertions() {
 		$props = (new ReflectionClass($this))->getProperties();
-		$validations = [];
+		$assertions = [];
 		foreach ($props as $prop) {
 			foreach ($this->getPropValidations($prop) as $validation) {
 				if (empty(trim($validation))) {
 					continue;
 				}
 
-				$validations[] = $this->parseValidation($prop, trim($validation));
+				$assertions[] = $this->parseValidation($prop, trim($validation));
 			}
 		}
 
-		return $validations;
+		return $assertions;
 
 	}
 
